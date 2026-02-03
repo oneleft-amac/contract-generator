@@ -13,6 +13,7 @@ const ContractGeneratorApp = () => {
   // Initialize Google API
   useEffect(() => {
     initializeGoogleAPI();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initializeGoogleAPI = () => {
