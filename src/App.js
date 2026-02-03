@@ -11,20 +11,19 @@ const ContractGeneratorApp = () => {
   const [contracts, setContracts] = useState([]);
 
   // Initialize Google API
-  useEffect(() => {
-    initializeGoogleAPI();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+ useEffect(() => {
+  initializeGoogleAPI();
+}, [initializeGoogleAPI]);
 
-  const initializeGoogleAPI = () => {
-    // Load the Google API client library
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/client.js';
-    script.onload = () => {
-      window.gapi.load('client:auth2', initClient);
-    };
-    document.head.appendChild(script);
+  const initializeGoogleAPI = React.useCallback(() => {
+  // Load the Google API client library
+  const script = document.createElement('script');
+  script.src = 'https://apis.google.com/js/client.js';
+  script.onload = () => {
+    window.gapi.load('client:auth2', initClient);
   };
+  document.head.appendChild(script);
+}, []);
 
   const initClient = () => {
     window.gapi.client.init({
