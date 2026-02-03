@@ -510,7 +510,7 @@ const ContractGeneratorApp = () => {
               }}>
                 {contracts.map(contract => (
                   
-                    key={contract.id}
+                    <a key={contract.id}
                     href={contract.webViewLink}
                     target="_blank"
                     rel="noopener noreferrer"
