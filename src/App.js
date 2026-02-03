@@ -1,34 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FileText, Plus, FolderOpen, LogOut, AlertCircle, CheckCircle } from 'lucide-react';
 
 const ContractGeneratorApp = () => {
-  const [authState, setAuthState] = useState('idle'); // idle, authenticating, authenticated
+  const [authState, setAuthState] = useState('idle');
   const [user, setUser] = useState(null);
-  const [currentView, setCurrentView] = useState('dashboard'); // dashboard, editor, templates
+  const [currentView, setCurrentView] = useState('dashboard');
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [formData, setFormData] = useState({});
   const [message, setMessage] = useState(null);
   const [contracts, setContracts] = useState([]);
 
-  // Initialize Google API
- useEffect(() => {
-  initializeGoogleAPI();
-}, [initializeGoogleAPI]);
-
-  const initializeGoogleAPI = React.useCallback(() => {
-  // Load the Google API client library
-  const script = document.createElement('script');
-  script.src = 'https://apis.google.com/js/client.js';
-  script.onload = () => {
-    window.gapi.load('client:auth2', initClient);
-  };
-  document.head.appendChild(script);
-}, []);
-
-  const initClient = () => {
+  const initClient = useCallback(() => {
+    if (!window.gapi) return;
+    
     window.gapi.client.init({
-      apiKey: 'AIzaSyA0-f_Nfq-92JktrytdlbxBvKYL2-BoNGA',
-      clientId: '912226942770-0t4ec7kaelf3fofn3ns871qf7dv5af47.apps.googleusercontent.com',
+      apiKey: process.env.REACT_APP_GOOGLE_API_KEY || 'YOUR_API_KEY',
+      clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID',
       scope: 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email',
       discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
     }).then(() => {
@@ -36,9 +23,25 @@ const ContractGeneratorApp = () => {
       auth2.isSignedIn.listen(updateSigninStatus);
       updateSigninStatus(auth2.isSignedIn.get());
     }).catch(error => {
-      showMessage(`Authentication error: ${error.error.error}`, 'error');
+      console.error('Auth error:', error);
+      showMessage(`Authentication error: ${error.error?.error || 'Unknown error'}`, 'error');
     });
-  };
+  }, []);
+
+  const initializeGoogleAPI = useCallback(() => {
+    const script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/client.js';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      initClient();
+    };
+    document.head.appendChild(script);
+  }, [initClient]);
+
+  useEffect(() => {
+    initializeGoogleAPI();
+  }, [initializeGoogleAPI]);
 
   const updateSigninStatus = (isSignedIn) => {
     if (isSignedIn) {
@@ -46,7 +49,6 @@ const ContractGeneratorApp = () => {
       const profile = auth2.currentUser.get().getBasicProfile();
       const email = profile.getEmail();
 
-      // Check if email ends with @oneleft.co
       if (!email.endsWith('@oneleft.co')) {
         handleSignout();
         showMessage('Access denied: Only @oneleft.co email addresses are permitted.', 'error');
@@ -206,10 +208,7 @@ const ContractGeneratorApp = () => {
     }
 
     try {
-      // Simulate PDF generation - in production, use a library like jsPDF or PDFKit
       const pdfContent = generatePDFContent(template, formData);
-      
-      // Save to Google Drive
       await savePDFToDrive(template.name, formData.clientName || formData.affiliateName, pdfContent);
       
       showMessage(`${template.name} generated and saved successfully!`, 'success');
@@ -222,7 +221,6 @@ const ContractGeneratorApp = () => {
   };
 
   const generatePDFContent = (template, data) => {
-    // This is a simplified version - in production, use jsPDF or similar
     let content = `${template.name}\n\n`;
     template.fields.forEach(field => {
       content += `${field.label}: ${data[field.key] || ''}\n`;
@@ -234,18 +232,12 @@ const ContractGeneratorApp = () => {
     try {
       const fileName = `${clientName || 'Contract'}_${templateName}_${new Date().toISOString().split('T')[0]}.pdf`;
       
-      // This would need actual PDF generation library
-      // For now, saving as text file - replace with actual PDF library
       const file = new Blob([content], { type: 'text/plain' });
       
       const metadata = {
         name: fileName,
         mimeType: 'application/pdf'
       };
-
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-      form.append('file', file);
 
       await window.gapi.client.drive.files.create({
         resource: metadata,
@@ -261,7 +253,6 @@ const ContractGeneratorApp = () => {
     }
   };
 
-  // UI Components
   if (authState !== 'authenticated') {
     return (
       <div style={{
@@ -361,7 +352,8 @@ const ContractGeneratorApp = () => {
                         fontFamily: 'inherit',
                         fontSize: '14px',
                         minHeight: '120px',
-                        resize: 'vertical'
+                        resize: 'vertical',
+                        boxSizing: 'border-box'
                       }}
                       placeholder={`Enter ${field.label.toLowerCase()}`}
                     />
@@ -409,10 +401,8 @@ const ContractGeneratorApp = () => {
     );
   }
 
-  // Dashboard View
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif' }}>
-      {/* Header */}
       <div style={{
         backgroundColor: 'white',
         borderBottom: '1px solid #e0e0e0',
@@ -450,7 +440,6 @@ const ContractGeneratorApp = () => {
         </div>
       </div>
 
-      {/* Message */}
       {message && (
         <div style={{
           padding: '16px 40px',
@@ -466,10 +455,8 @@ const ContractGeneratorApp = () => {
         </div>
       )}
 
-      {/* Main Content */}
       <div style={{ padding: '40px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          {/* New Contract Section */}
           <div style={{ marginBottom: '50px' }}>
             <h2 style={{ color: '#333', marginBottom: '20px' }}>Create New Contract</h2>
             <div style={{
@@ -510,7 +497,6 @@ const ContractGeneratorApp = () => {
             </div>
           </div>
 
-          {/* Recent Contracts Section */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
               <FolderOpen size={20} color="#667eea" />
@@ -523,7 +509,7 @@ const ContractGeneratorApp = () => {
                 gap: '16px'
               }}>
                 {contracts.map(contract => (
-                  <a
+                  
                     key={contract.id}
                     href={contract.webViewLink}
                     target="_blank"
@@ -577,4 +563,3 @@ const ContractGeneratorApp = () => {
 };
 
 export default ContractGeneratorApp;
-
