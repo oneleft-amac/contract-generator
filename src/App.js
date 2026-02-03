@@ -38,7 +38,11 @@ const ContractGeneratorApp = () => {
     };
     document.head.appendChild(script);
   }, [initClient]);
-
+  
+// eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
+  initializeGoogleAPI();
+}, [initializeGoogleAPI]);
   useEffect(() => {
     initializeGoogleAPI();
   }, [initializeGoogleAPI]);
