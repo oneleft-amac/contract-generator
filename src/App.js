@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Plus, FolderOpen, LogOut, AlertCircle, CheckCircle } from 'lucide-react';
 
 const ContractGeneratorApp = () => {
@@ -10,42 +10,36 @@ const ContractGeneratorApp = () => {
   const [message, setMessage] = useState(null);
   const [contracts, setContracts] = useState([]);
 
-  const initClient = useCallback(() => {
-    if (!window.gapi) return;
-    
-    window.gapi.client.init({
-      apiKey: process.env.REACT_APP_GOOGLE_API_KEY || 'YOUR_API_KEY',
-      clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID',
-      scope: 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email',
-      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
-    }).then(() => {
-      const auth2 = window.gapi.auth2.getAuthInstance();
-      auth2.isSignedIn.listen(updateSigninStatus);
-      updateSigninStatus(auth2.isSignedIn.get());
-    }).catch(error => {
-      console.error('Auth error:', error);
-      showMessage(`Authentication error: ${error.error?.error || 'Unknown error'}`, 'error');
-    });
+  useEffect(() => {
+    const initializeGoogleAPI = () => {
+      const script = document.createElement('script');
+      script.src = 'https://apis.google.com/js/client.js';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        if (!window.gapi) return;
+        
+        window.gapi.client.init({
+          apiKey: process.env.REACT_APP_GOOGLE_API_KEY || 'YOUR_API_KEY',
+          clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID',
+          scope: 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email',
+          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+        }).then(() => {
+          const auth2 = window.gapi.auth2.getAuthInstance();
+          auth2.isSignedIn.listen(handleSigninStatus);
+          handleSigninStatus(auth2.isSignedIn.get());
+        }).catch(error => {
+          console.error('Auth error:', error);
+          showMessage(`Authentication error: ${error.error?.error || 'Unknown error'}`, 'error');
+        });
+      };
+      document.head.appendChild(script);
+    };
+
+    initializeGoogleAPI();
   }, []);
 
-  const initializeGoogleAPI = useCallback(() => {
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/client.js';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      initClient();
-    };
-    document.head.appendChild(script);
-  }, [initClient]);
-
-useEffect(() => {
-  initializeGoogleAPI();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [initializeGoogleAPI]);
-
-
-  const updateSigninStatus = (isSignedIn) => {
+  const handleSigninStatus = (isSignedIn) => {
     if (isSignedIn) {
       const auth2 = window.gapi.auth2.getAuthInstance();
       const profile = auth2.currentUser.get().getBasicProfile();
