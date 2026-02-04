@@ -19,19 +19,19 @@ const ContractGeneratorApp = () => {
       script.onload = () => {
         if (!window.gapi) return;
         
-        window.gapi.client.init({
-          apiKey: process.env.REACT_APP_GOOGLE_API_KEY || 'YOUR_API_KEY',
-          clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID',
-          scope: 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email',
-          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
-        }).then(() => {
-          const auth2 = window.gapi.auth2.getAuthInstance();
-          auth2.isSignedIn.listen(handleSigninStatus);
-          handleSigninStatus(auth2.isSignedIn.get());
-        }).catch(error => {
-          console.error('Auth error:', error);
-          showMessage(`Authentication error: ${error.error?.error || 'Unknown error'}`, 'error');
-        });
+     window.gapi.client.init({
+  apiKey: process.env.REACT_APP_GOOGLE_API_KEY,
+  clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+  scope: 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email',
+  discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+}).then(() => {
+  const auth2 = window.gapi.auth2.getAuthInstance();
+  auth2.isSignedIn.listen(handleSigninStatus);
+  handleSigninStatus(auth2.isSignedIn.get());
+}).catch(error => {
+  console.error('Auth error:', error);
+  showMessage(`Authentication error: ${error.error?.error || 'Unknown error'}`, 'error');
+});
       };
       document.head.appendChild(script);
     };
